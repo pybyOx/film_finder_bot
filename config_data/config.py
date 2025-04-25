@@ -21,3 +21,6 @@ DEFAULT_COMMANDS = (
     ("genre", "Топ-5 фильмов по жанру: /genre <название>"),
     ("day", "Фильм дня")
 )
+
+BASE_PARAMS = {"api_key": RAPID_API_KEY,
+               "language": "ru-RU"}
