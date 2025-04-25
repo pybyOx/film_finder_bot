@@ -5,6 +5,13 @@ from random import randint
 from utils.movie_utils import parse_movie_details
 
 
+def get_movie_details_by_id(id_movie: int):
+    details = requests.get(f'{BASE_URL}/movie/{id_movie}', params={**BASE_PARAMS})
+    if not error_handling(details):
+        return None
+    return parse_movie_details(details.json())
+
+
 def search_movie(query: str):
 
     response = requests.get(f'{BASE_URL}/search/movie', params={**BASE_PARAMS,
@@ -17,22 +24,18 @@ def search_movie(query: str):
     if not data["results"]:
         return None
     movie = data["results"][0]
-    movie_id = movie.get('id')
 
-    details_response = requests.get(f'{BASE_URL}/movie/{movie_id}', params={**BASE_PARAMS})
-    if not error_handling(details_response):
-        return None
-
-    return parse_movie_details(details_response.json())
+    return get_movie_details_by_id(movie.get('id'))
 
 
 def get_movies_by_genre(id_genre: int):
-
-    first_response = requests.get(f"{BASE_URL}/discover/movie", params={**BASE_PARAMS,
-                                                                        "sort_by": "vote_average.desc",
-                                                                        "vote_count.gte": 1000,
-                                                                        "with_genres": str(id_genre),
-                                                                        "page": 1})
+    params = {**BASE_PARAMS,
+              "sort_by": "vote_average.desc",
+              "vote_count.gte": 1000,
+              "with_genres": str(id_genre),
+              "page": 1
+    }
+    first_response = requests.get(f"{BASE_URL}/discover/movie", params=params)
     if not error_handling(first_response):
         return None
 
@@ -40,9 +43,9 @@ def get_movies_by_genre(id_genre: int):
 
     total_pages = min(data.get("total_pages", 1), 20)
     random_page = randint(1, total_pages)
+    params["page"] = random_page
 
-    response = requests.get(f"{BASE_URL}/discover/movie", params={**BASE_PARAMS,
-                                                                  "page": random_page})
+    response = requests.get(f"{BASE_URL}/discover/movie", params=params)
     if not error_handling(response):
         return None
 
@@ -50,6 +53,8 @@ def get_movies_by_genre(id_genre: int):
 
     result = []
     for movie in movies:
-        result.append(parse_movie_details(movie))
+
+        result.append(get_movie_details_by_id(movie.get('id')))
     return result
+
 
