@@ -3,7 +3,6 @@ from loader import bot
 from api import tmdb_api
 from api.get_genres import get_genres
 from utils.check_name import check_name
-from utils.genre_utils import get_genre_id_by_name
 from utils.movie_utils import send_movie_info
 
 
@@ -14,7 +13,7 @@ def movie_handler(message: Message):
         return
 
     genres = get_genres()
-    genre_id = get_genre_id_by_name(genre_name, genres)
+    genre_id = genres.get(genre_name.lower())
     if genre_id is None:
         bot.reply_to(message, f"Жанр '{genre_name}' не найден. Убедитесь, что вы ввели его корректно.")
         return

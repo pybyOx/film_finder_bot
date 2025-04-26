@@ -1,8 +1,9 @@
 import requests
-from config_data.config import BASE_URL, RAPID_API_KEY, BASE_PARAMS
+from config_data.config import BASE_URL, BASE_PARAMS
 from api.error_handling import error_handling
 from random import randint
 from utils.movie_utils import parse_movie_details
+from typing import Optional
 
 
 def get_movie_details_by_id(id_movie: int):
@@ -21,40 +22,43 @@ def search_movie(query: str):
         return None
 
     data = response.json()
+
     if not data["results"]:
         return None
+
     movie = data["results"][0]
 
     return get_movie_details_by_id(movie.get('id'))
 
 
-def get_movies_by_genre(id_genre: int):
+def get_movies_by_genre(id_genre: int) -> Optional[list[dict]]:
+    """ Функция, осуществляющая поиск фильмов по заданному жанру и фильтрам."""
+
     params = {**BASE_PARAMS,
               "sort_by": "vote_average.desc",
               "vote_count.gte": 1000,
               "with_genres": str(id_genre),
-              "page": 1
-    }
+              "page": 1}
+
+    # Получаем все фильмы по заданным фильтрам
     first_response = requests.get(f"{BASE_URL}/discover/movie", params=params)
     if not error_handling(first_response):
         return None
-
     data = first_response.json()
 
+    # Рандомно выбираем одну страницу
     total_pages = min(data.get("total_pages", 1), 20)
     random_page = randint(1, total_pages)
     params["page"] = random_page
 
+    # Получаем с этой страницы первые пять фильмов
     response = requests.get(f"{BASE_URL}/discover/movie", params=params)
     if not error_handling(response):
         return None
-
     movies = response.json().get("results", [])[:5]
 
+    # Записываем отфильтрованные данные в список и выводим его
     result = []
     for movie in movies:
-
         result.append(get_movie_details_by_id(movie.get('id')))
     return result
-
-
