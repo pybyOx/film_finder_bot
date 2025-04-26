@@ -1,15 +1,4 @@
-from typing import Dict
-from config_data.config import IMG_BASE_URL
 from telebot import TeleBot
-
-
-def parse_movie_details(data: Dict):
-    return {"title": data.get("title"),
-            "overview": data.get("overview"),
-            "release_date": data.get("release_date", "")[:4],
-            "rating": data.get("vote_average"),
-            "poster_url": IMG_BASE_URL + data["poster_path"] if data.get("poster_path") else None,
-            "genres": [genre["name"] for genre in data.get("genres", [])]}
 
 
 def send_movie_info(bot: TeleBot, chat_id: int, movie: dict):
