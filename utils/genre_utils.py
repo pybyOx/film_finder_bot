@@ -1,19 +1,17 @@
 import json
 import os
 from datetime import datetime, timedelta
-import requests
-from config_data.config import RAPID_API_KEY, BASE_URL, GENRES_CACHE_FILE
-from api.error_handling import error_handling
+from config_data.config import GENRES_CACHE_FILE, BASE_PARAMS
+from api.tmdb_api import make_api_request
+from typing import Optional
 
 
-def fetch_genres_from_api():
-    response = requests.get(f"{BASE_URL}/genre/movie/list", params={"api_key": RAPID_API_KEY,
-                                                                    "language": "ru-RU"})
-    if not error_handling(response):
+def fetch_genres_from_api() -> Optional[dict]:
+    genres_data = make_api_request("/genre/movie/list", BASE_PARAMS)
+    if not genres_data:
         return None
-
-    genres_data = response.json()["genres"]
-    return {genre["name"].lower(): genre["id"] for genre in genres_data}
+    genres = genres_data["genres"]
+    return {genre["name"].lower(): genre["id"] for genre in genres}
 
 
 def get_genres():
