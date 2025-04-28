@@ -6,7 +6,10 @@ from api.tmdb_api import make_api_request
 
 
 def send_movie_info(bot: TeleBot, chat_id: int, movie: dict):
+    """Вывод информации о фильме для пользователя"""
+
     genres_str = ", ".join(movie.get("genres", [])) or "Жанры не указаны"
+
     text = f"*{movie['title']}* ({movie['release_date']})\n" \
            f"🎭 Жанры: {genres_str}\n" \
            f"⭐ Рейтинг: {movie['rating']}\n\n" \
@@ -60,6 +63,8 @@ def get_movies_by_genre(id_genre: int) -> Optional[list[dict]]:
     params = {**BASE_PARAMS,
               "sort_by": "vote_average.desc",
               "vote_count.gte": 1000,
+              "vote_average.gte": 7.0,
+              "primary_release_date.gte": "1990-01-01",
               "with_genres": str(id_genre),
               "page": 1}
 

@@ -4,7 +4,7 @@ from api.error_handling import error_handling
 from typing import Dict, Any
 
 
-def make_api_request(url_longer: str, params: dict) -> Dict[Any]:
+def make_api_request(url_longer: str, params: dict) -> Dict[str, Any]:
     """Отправляет запрос к API и возвращает результат в виде словаря."""
     response = requests.get(f"{BASE_URL}{url_longer}", params=params)
 
