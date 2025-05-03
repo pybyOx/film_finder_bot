@@ -3,6 +3,7 @@ from random import randint, sample
 from config_data.config import BASE_PARAMS, IMG_BASE_URL
 from typing import Optional
 from api.tmdb_api import make_api_request
+from utils.format_datetime_ru import format_datetime_ru
 
 
 def send_movie_info(bot: TeleBot, chat_id: int, movie: dict):
@@ -10,10 +11,13 @@ def send_movie_info(bot: TeleBot, chat_id: int, movie: dict):
 
     genres_str = ", ".join(movie.get("genres", [])) or "Жанры не указаны"
 
+    datetime_str = f"_Дата поиска: {format_datetime_ru(movie['datetime'])}_\n" if "datetime" in movie else ""
+
     text = f"*{movie['title']}* ({movie['release_date']})\n" \
            f"🎭 Жанры: {genres_str}\n" \
            f"⭐ Рейтинг: {movie['rating']}\n\n" \
-           f"{movie['overview'] or 'Нет описания'}"
+           f"{movie['overview'] or 'Нет описания'}\n\n" \
+           f"{datetime_str}"
 
     if movie.get("poster_url"):
         bot.send_photo(chat_id=chat_id, photo=movie["poster_url"], caption=text, parse_mode="Markdown")
@@ -25,8 +29,8 @@ def get_movie_details_by_id(id_movie: int) -> Optional[dict]:
     """Запрос информации о фильме по его id"""
 
     # Получаем всю информацию о фильме
-    data = make_api_request(f"/movie/{id_movie}", BASE_PARAMS)
-    if not data:
+    data: dict = make_api_request(f"/movie/{id_movie}", BASE_PARAMS)
+    if not data:  # Если словарь пуст значит возникла ошибка запроса
         return None
 
     # Возвращаем словарь с нужными данными
@@ -38,35 +42,7 @@ def get_movie_details_by_id(id_movie: int) -> Optional[dict]:
             "genres": [genre["name"] for genre in data.get("genres", [])]}
 
 
-def search_movie_by_query(query: str) -> Optional[dict]:
-    """Поиск фильма по названию"""
-
-    # Получаем информацию о фильме по его названию
-    data = make_api_request('/search/movie', params={**BASE_PARAMS, "query": query, "include_adult": False})
-    if not data:
-        return None
-
-    # Возвращаем None если поиск не дал результатов
-    if not data["results"]:
-        return None
-
-    # Если фильмов несколько берем первый
-    movie = data["results"][0]
-
-    # Возвращаем словарь с отфильтрованными данными о фильме
-    return get_movie_details_by_id(movie.get('id'))
-
-
-def get_movies_by_genre(id_genre: int) -> Optional[list[dict]]:
-    """ Функция, осуществляющая поиск фильмов по заданному жанру и фильтрам."""
-
-    params = {**BASE_PARAMS,
-              "sort_by": "vote_average.desc",
-              "vote_count.gte": 1000,
-              "vote_average.gte": 7.0,
-              "primary_release_date.gte": "1990-01-01",
-              "with_genres": str(id_genre),
-              "page": 1}
+def random_movie(params: dict, count: int) -> Optional[list]:
 
     # Получаем все фильмы по заданным фильтрам
     all_movies = make_api_request('/discover/movie', params)
@@ -85,11 +61,11 @@ def get_movies_by_genre(id_genre: int) -> Optional[list[dict]]:
     if not movie_list:
         return None
 
-    # Рандомно выбираем из них 5 уникальных фильмов
-    movies = sample(movie_list, min(5, len(movie_list)))
+    # Рандомно выбираем из них заданное количество уникальных фильмов
+    movies = sample(movie_list, min(count, len(movie_list)))
+    return movies
 
-    # Записываем отфильтрованные данные в список и выводим его
-    result = []
-    for movie in movies:
-        result.append(get_movie_details_by_id(movie.get('id')))
-    return result
+
+def write_movie_of_day_data(movie_of_day: list) -> dict:
+    """Функция для записи фильма дня"""
+    return get_movie_details_by_id(movie_of_day[0].get("id"))

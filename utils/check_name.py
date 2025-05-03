@@ -8,8 +8,8 @@ def check_name(message: Message, example: str = "") -> str | None:
     """
     args = message.text.split(maxsplit=1)
     if len(args) < 2:
-        hint = f"Пожалуйста, укажите название. Пример:\n{example}" if example \
+        text = f"Пожалуйста, укажите название. Пример:\n{example}" if example \
             else "Пожалуйста, укажите название после команды."
-        bot.reply_to(message, hint)
+        bot.reply_to(message, text)
         return None
     return args[1]
