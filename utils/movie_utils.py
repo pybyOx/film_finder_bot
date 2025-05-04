@@ -6,7 +6,7 @@ from api.tmdb_api import make_api_request
 from utils.format_datetime_ru import format_datetime_ru
 
 
-def send_movie_info(bot: TeleBot, chat_id: int, movie: dict):
+def send_movie_info(bot: TeleBot, chat_id: int, movie: dict, reply_markup=None):
     """Вывод информации о фильме для пользователя"""
 
     genres_str = ", ".join(movie.get("genres", [])) or "Жанры не указаны"
@@ -20,9 +20,16 @@ def send_movie_info(bot: TeleBot, chat_id: int, movie: dict):
            f"{datetime_str}"
 
     if movie.get("poster_url"):
-        bot.send_photo(chat_id=chat_id, photo=movie["poster_url"], caption=text, parse_mode="Markdown")
+        bot.send_photo(chat_id=chat_id,
+                       photo=movie["poster_url"],
+                       caption=text,
+                       parse_mode="Markdown",
+                       reply_markup=reply_markup)
     else:
-        bot.send_message(chat_id=chat_id, text=text, parse_mode="Markdown")
+        bot.send_message(chat_id=chat_id,
+                         text=text,
+                         parse_mode="Markdown",
+                         reply_markup=reply_markup)
 
 
 def get_movie_details_by_id(id_movie: int) -> Optional[dict]:
