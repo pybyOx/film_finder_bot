@@ -15,15 +15,13 @@ IMG_BASE_URL = "https://image.tmdb.org/t/p/w500"
 GENRES_CACHE_FILE = os.path.join(os.path.dirname(__file__), "genres_cache.json")
 MOVIE_OF_DAY_CACHE = os.path.join(os.path.dirname(__file__), "movie_of_day_cache.json")
 
-DEFAULT_COMMANDS = (
-    ("start", "Запустить бота"),
-    ("help", "Вывести справку"),
-    ("movie", "Поиск фильма: /movie <название>"),
-    ("genre", "Топ-5 фильмов по жанру: /genre <название>"),
-    ("day", "Фильм дня"),
-    ("random", "Случайный фильм"),
-    ("history", "История поиска"),
-)
+DEFAULT_COMMANDS = (("start", "Запустить бота"),
+                    ("help", "Вывести справку"),
+                    ("movie", "Поиск фильма: /movie <название>"),
+                    ("genre", "Топ-5 фильмов по жанру: /genre <название>"),
+                    ("day", "Фильм дня"),
+                    ("random", "Случайный фильм"),
+                    ("favorite", "Избранные фильмы"))
 
 BASE_PARAMS = {"api_key": RAPID_API_KEY,
                "language": "ru-RU"}

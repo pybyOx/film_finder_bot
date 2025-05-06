@@ -2,6 +2,7 @@ from telebot.types import Message
 from loader import bot
 from database.models import User
 from peewee import IntegrityError
+from keyboards.inline.pagination_state import user_pages
 
 
 @bot.message_handler(commands=["start"])
@@ -16,11 +17,8 @@ def handle_start(message: Message) -> None:
                     username=username)
         bot.reply_to(message, f"🎬 Привет, {username}! \nЯ FilmBuddy — твой гид по миру кино."
                               f"\nДля просмотра доступных команд напиши /help")
+        user_pages[user_id] = {'movies': [], "current_index": 0, "is_favorites": False}
         
     # Иначе приветствуем уже зарегистрированного пользователя
     except IntegrityError:
         bot.reply_to(message, f"Рад вас снова видеть, {username}!")
-
-
-
-

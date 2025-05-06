@@ -4,13 +4,21 @@ from config_data.config import BASE_PARAMS, IMG_BASE_URL
 from typing import Optional
 from api.tmdb_api import make_api_request
 from utils.format_datetime_ru import format_datetime_ru
+from keyboards.inline.combined_keyboard import get_combined_keyboard
+from keyboards.inline.pagination_state import user_pages
 
 
-def send_movie_info(bot: TeleBot, chat_id: int, movie: dict, reply_markup=None):
-    """Вывод информации о фильме для пользователя"""
+def send_movie_info(bot: TeleBot, chat_id: int, user_id: int, movie: dict, total: int):
+    """Отправляет информацию о фильме с клавиатурой для пагинации и действий (в избранное, просмотрено)."""
+
+    data: dict = user_pages[user_id]
+    index: int = data["current_index"]
+    is_favorites: bool = data["is_favorites"]
+
+    # Генерируем клавиатуру с пагинацией и кнопками
+    keyboard = get_combined_keyboard(user_id, movie, total, index, is_favorites)
 
     genres_str = ", ".join(movie.get("genres", [])) or "Жанры не указаны"
-
     datetime_str = f"_Дата поиска: {format_datetime_ru(movie['datetime'])}_\n" if "datetime" in movie else ""
 
     text = f"*{movie['title']}* ({movie['release_date']})\n" \
@@ -24,12 +32,12 @@ def send_movie_info(bot: TeleBot, chat_id: int, movie: dict, reply_markup=None):
                        photo=movie["poster_url"],
                        caption=text,
                        parse_mode="Markdown",
-                       reply_markup=reply_markup)
+                       reply_markup=keyboard)
     else:
         bot.send_message(chat_id=chat_id,
                          text=text,
                          parse_mode="Markdown",
-                         reply_markup=reply_markup)
+                         reply_markup=keyboard)
 
 
 def get_movie_details_by_id(id_movie: int) -> Optional[dict]:
@@ -41,7 +49,8 @@ def get_movie_details_by_id(id_movie: int) -> Optional[dict]:
         return None
 
     # Возвращаем словарь с нужными данными
-    return {"title": data.get("title"),
+    return {"movie_id": id_movie,
+            "title": data.get("title"),
             "overview": data.get("overview"),
             "release_date": data.get("release_date", "")[:4],
             "rating": data.get("vote_average"),

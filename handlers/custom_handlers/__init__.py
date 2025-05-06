@@ -1,1 +1,1 @@
-from . import movie, genre, day, random, history
+from . import movie, genre, day, random, favorite
