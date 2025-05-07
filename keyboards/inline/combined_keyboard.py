@@ -1,13 +1,13 @@
-from telebot.types import InlineKeyboardMarkup
-from .favorite_keyboard import get_favorite_button
-from .watched_keyboard import get_watched_button
-from .pagination_keyboard import get_pagination_button
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from database.models import FavoriteMovie, User
+from database.models import is_movie_favorite
 
 
 def get_combined_keyboard(user_id: int, movie: dict, total: int, index: int, is_favorites=False) \
         -> InlineKeyboardMarkup:
-    """Создаёт комбинированную клавиатуру с пагинацией и кнопками "в избранное" / "просмотрено".
+    """Создаёт комбинированную клавиатуру с пагинацией(если фильмов больше одного) и кнопками
+    "♥" (удалить из избранного) - если фильм уже в избранном у пользователя / "♡" (добавить в избранное),
+    "✅" (снять отметку) - если фильм помечен как просмотренный / "🔲" (отметить как просмотренный).
     :param user_id: ID пользователя
     :param movie: словарь фильма (dict)
     :param total: общее количество фильмов (для пагинации)
@@ -19,18 +19,35 @@ def get_combined_keyboard(user_id: int, movie: dict, total: int, index: int, is_
 
     # Кнопки пагинации, если фильмов больше одного
     if total > 1:
-        keyboard.row(*get_pagination_button(index=index, length=total))
+
+        buttons = []
+        if index > 0:
+            buttons.append(InlineKeyboardButton("◀️", callback_data="prev"))
+        if index < total - 1:
+            buttons.append(InlineKeyboardButton("▶️", callback_data="next"))
+
+        keyboard.row(*buttons)
 
     # Ряд кнопок "♥/♡" и "✅/🔲"
     buttons = []
+    movie_id = movie["id"]
 
     # Кнопка "♥"/"♡"
-    buttons.append(get_favorite_button(user_id=user_id, movie_id=movie["id"]))
+    buttons.append(InlineKeyboardButton("♥", callback_data=f"remove_fav:{movie_id}")
+                   if is_movie_favorite(user_id, movie_id)
+                   else InlineKeyboardButton("♡", callback_data=f"add_fav:{movie_id}"))
 
     # Кнопка "✅"/"🔲", если это favorites
     if is_favorites:
-        buttons.append(get_watched_button(FavoriteMovie.get((FavoriteMovie.user == User.get(User.user_id == user_id))
-                                                            & (FavoriteMovie.movie_id == movie["id"]))))
+        user = User.get(User.user_id == user_id)
+        movie = FavoriteMovie.get((FavoriteMovie.user == user) & (FavoriteMovie.movie_id == movie_id))
+
+        text: str = "✅" if movie.is_watched else "🔲"
+        action: str = "remove_watch" if movie.is_watched else "add_watch"
+        callback: str = f"{action}:{movie.movie_id}"
+
+        buttons.append(InlineKeyboardButton(text, callback_data=callback))
+
     keyboard.row(*buttons)
 
     return keyboard

@@ -1,1 +1,1 @@
-from . import pagination_state, combined_keyboard, favorite_keyboard, pagination_keyboard, watched_keyboard
+from . import callbacks, combined_keyboard, pagination_state
