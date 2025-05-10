@@ -14,20 +14,20 @@ def random_handler(message: Message) -> None:
 
     user_id = message.from_user.id
     try:
-        # Получаем список с данными случайного фильма
-        movie: list[dict] | None = random_movie({**BASE_PARAMS,
-                                                 "vote_count.gte": 5000,
-                                                 "vote_average.gte": 7.2,
-                                                 "primary_release_date.gte": "1990-01-01",
-                                                 "page": 1}, 1)
-        if not movie:
+        # Получаем список с данными фильмов
+        movies: list[dict] | None = random_movie({**BASE_PARAMS,
+                                                  "vote_count.gte": 5000,
+                                                  "vote_average.gte": 7.2,
+                                                  "primary_release_date.gte": "1990-01-01",
+                                                  "page": 1}, 10)
+        if not movies:
             raise MovieNotFoundError("Не удалось получить случайный фильм.")
 
-        movie_details = get_movie_details_by_id(movie[0].get("id"))
-        if not movie_details:
+        movies_details: list[dict] = [get_movie_details_by_id(movie.get("id")) for movie in movies]
+        if not movies_details:
             raise MovieNotFoundError("Ошибка запроса при попытке получить информацию о фильме.")
 
-        send_movie_info(bot, message.chat.id, user_id, [movie_details])
+        send_movie_info(bot, message.chat.id, user_id, movies=movies_details)
 
     except MovieNotFoundError as error:
         bot.send_message(message.chat.id, error)
