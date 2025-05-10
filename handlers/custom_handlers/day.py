@@ -1,14 +1,13 @@
 from telebot.types import Message
-from utils.cache_utils import get_cache_file
+from utils.get_cache_file import get_cache_file
 from utils.movie_utils import send_movie_info, random_movie, write_movie_of_day_data
 from loader import bot
 from config_data.config import MOVIE_OF_DAY_CACHE, BASE_PARAMS
-from utils.decorators import registration_check, send_typing_action
-from keyboards.inline.pagination_state import user_pages, init_user_pages
+from utils.decorators import ensure_user_registered, send_typing_action
 
 
 @bot.message_handler(commands=["day"])
-@registration_check
+@ensure_user_registered
 @send_typing_action
 def day_handler(message: Message) -> None:
     """Обработчик команды |day"""
@@ -21,8 +20,5 @@ def day_handler(message: Message) -> None:
         bot.send_message(message.chat.id, "Не удалось получить фильм дня.")
         return
 
-    user_id = message.from_user.id
-    init_user_pages(user_id, [movie], 0)
-
     # Выводим информацию о фильме пользователю в чат
-    send_movie_info(bot, message.chat.id, user_id, movie, 1)
+    send_movie_info(bot, message.chat.id, message.from_user.id, [movie])

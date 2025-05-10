@@ -1,17 +1,17 @@
 from telebot.types import Message
 from loader import bot
-from utils.cache_utils import get_cache_file
+from utils.get_cache_file import get_cache_file
 from utils.check_name import check_name
 from utils.movie_utils import send_movie_info, random_movie, get_movie_details_by_id
 from config_data.config import GENRES_CACHE_FILE, BASE_PARAMS
 from api.tmdb_api import make_api_request
 from utils.write_genres_data import write_genres_data
-from utils.decorators import registration_check, send_typing_action
-from keyboards.inline.pagination_state import user_pages, init_user_pages
+from utils.decorators import ensure_user_registered, send_typing_action
 from utils.exceptions import MovieNotFoundError
 
+
 @bot.message_handler(commands=["genre"])
-@registration_check
+@ensure_user_registered
 @send_typing_action
 def genre_handler(message: Message) -> None:
     """Обработчик команды |genre"""
@@ -45,11 +45,8 @@ def genre_handler(message: Message) -> None:
         if not movies:
             raise MovieNotFoundError("Не удалось получить информацию о фильмах в жанре")
 
-        init_user_pages(message.from_user.id, movies)
-
-        send_movie_info(bot, message.chat.id, message.from_user.id, movies[0], len(movies))
+        send_movie_info(bot, message.chat.id, message.from_user.id, movies)
 
     except MovieNotFoundError as error:
         bot.send_message(message.chat.id, f"{error} {genre_name}.")
-        init_user_pages(message.from_user.id, [])
         return

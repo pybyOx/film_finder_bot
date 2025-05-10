@@ -2,7 +2,7 @@ from telebot.types import Message
 from loader import bot
 from utils.check_name import check_name
 from utils.movie_utils import send_movie_info, get_movie_details_by_id
-from utils.decorators import registration_check, send_typing_action
+from utils.decorators import ensure_user_registered, send_typing_action
 from api.tmdb_api import make_api_request
 from config_data.config import BASE_PARAMS
 from utils.exceptions import MovieNotFoundError
@@ -11,7 +11,7 @@ from keyboards.inline.pagination_state import init_user_pages
 
 
 @bot.message_handler(commands=["movie"])
-@registration_check
+@ensure_user_registered
 @send_typing_action
 def movie_handler(message: Message) -> None:
     """Обработчик команды |movie"""
@@ -20,8 +20,8 @@ def movie_handler(message: Message) -> None:
     user_title: str | None = check_name(message, '/movie Интерстеллар')
     if not user_title:
         return
-    user_title = user_title.lower()
 
+    user_title = user_title.lower()
     user_id = message.from_user.id
 
     try:
@@ -43,32 +43,25 @@ def movie_handler(message: Message) -> None:
             if not re.search(rf'\b{re.escape(user_title)}\b', movie_title):
                 continue
 
+            # Получаем детали фильма по его id
+            movie_details = get_movie_details_by_id(movie.get('id'))
+            if not movie_details:
+                raise MovieNotFoundError("Возникла ошибка запроса при попытке получения информации о фильме")
+
             # Если найдено точное совпадение по названию
             if movie_title == user_title:
 
-                movie = get_movie_details_by_id(movie.get("id"))
-                if not movie:
-                    raise MovieNotFoundError("Возникла ошибка запроса при попытке получения информации о фильме")
-
-                init_user_pages(user_id, [movie])
-
-                send_movie_info(bot, message.chat.id, user_id, movie, 1)
+                send_movie_info(bot, message.chat.id, user_id, [movie_details])
                 return
 
             # Заносим данные в список для показа через пагинацию (на случай если точного совпадения не найдется)
-            movie_details: dict | None = get_movie_details_by_id(movie.get('id'))
-            if not movie_details:
-                continue
             movies.append(movie_details)
 
         if not movies:
             raise MovieNotFoundError("Не удалось получить данные ни по одному фильму.")
 
         # Если точного совпадения не найдено выводим все результаты поиска
-
-        init_user_pages(user_id, movies)
-
-        send_movie_info(bot, message.chat.id, user_id, movies[0], len(movies))
+        send_movie_info(bot, message.chat.id, user_id, movies)
 
     except MovieNotFoundError as error:
         bot.send_message(message.chat.id, error)

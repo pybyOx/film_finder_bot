@@ -1,24 +1,10 @@
 from telebot.types import Message
 from loader import bot
-from database.models import User
-from peewee import IntegrityError
-from keyboards.inline.pagination_state import user_pages
+from utils.decorators import ensure_user_registered, send_typing_action
 
 
 @bot.message_handler(commands=["start"])
-def handle_start(message: Message) -> None:
-    """Обработчик команды /start"""
-    user_id = message.from_user.id
-    username = message.from_user.full_name
-
-    # Если пользователя нет в базе - заносим и отправляем приветственное сообщение
-    try:
-        User.create(user_id=user_id,
-                    username=username)
-        bot.reply_to(message, f"🎬 Привет, {username}! \nЯ FilmBuddy — твой гид по миру кино."
-                              f"\nДля просмотра доступных команд напиши /help")
-        user_pages[user_id] = {'movies': [], "current_index": 0, "is_favorites": False}
-        
-    # Иначе приветствуем уже зарегистрированного пользователя
-    except IntegrityError:
-        bot.reply_to(message, f"Рад вас снова видеть, {username}!")
+@ensure_user_registered
+@send_typing_action
+def day_handler(message: Message) -> None:
+    """Обработчик команды |start"""
