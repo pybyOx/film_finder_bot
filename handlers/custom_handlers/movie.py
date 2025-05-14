@@ -1,13 +1,14 @@
 from telebot.types import Message
 from loader import bot
 from utils.check_name import check_name
-from utils.movie_utils import send_movie_info, get_movie_details_by_id
 from utils.decorators import ensure_user_registered, send_typing_action
 from api.tmdb_api import make_api_request
 from config_data.config import BASE_PARAMS
-from utils.exceptions import MovieNotFoundError
+from utils.exceptions import MovieNotFoundError, ResponseError, ArgumentError
 import re
-from keyboards.inline.pagination_state import init_user_pages
+from models.movie_model import Movie
+from states.pagination_state import PageState, USER_PAGES
+from utils.send_movie_info import send_movie_info
 
 
 @bot.message_handler(commands=["movie"])
@@ -15,23 +16,19 @@ from keyboards.inline.pagination_state import init_user_pages
 @send_typing_action
 def movie_handler(message: Message) -> None:
     """Обработчик команды |movie"""
-
-    # Проверка ввел ли пользователь название фильма
-    user_title: str | None = check_name(message, '/movie Интерстеллар')
-    if not user_title:
-        return
-
-    user_title = user_title.lower()
+    chat_id = message.chat.id
     user_id = message.from_user.id
 
     try:
-        # Получаем словарь с результатами запроса к api
-        data: dict = make_api_request('/search/movie', params={**BASE_PARAMS,
-                                                               "query": user_title,
-                                                               "include_adult": False})
+        user_title = check_name(message, '/movie Интерстеллар').lower()
 
-        results: list[dict] | None = data.get("results")
-        if not results:  # если словарь data пуст, не содержит ключа 'results' или data['results'] == []
+        # Получаем словарь с результатами запроса к api
+        response: dict = make_api_request('/search/movie', params={**BASE_PARAMS,
+                                                                   "query": user_title,
+                                                                   "include_adult": False})
+
+        results = response.get("results")
+        if not results:
             raise MovieNotFoundError("Фильм не найден. Попробуйте другое название.")
 
         movies = []
@@ -43,25 +40,33 @@ def movie_handler(message: Message) -> None:
             if not re.search(rf'\b{re.escape(user_title)}\b', movie_title):
                 continue
 
-            # Получаем детали фильма по его id
-            movie_details = get_movie_details_by_id(movie.get('id'))
-            if not movie_details:
-                raise MovieNotFoundError("Возникла ошибка запроса при попытке получения информации о фильме")
+            movie = Movie(movie)
 
             # Если найдено точное совпадение по названию
             if movie_title == user_title:
 
-                send_movie_info(bot, message.chat.id, user_id, [movie_details])
+                state = PageState([movie])
+                USER_PAGES.set_state(user_id, state)
+
+                send_movie_info(bot, chat_id, user_id, movie,
+                                state.current_index, state.total())
                 return
 
             # Заносим данные в список для показа через пагинацию (на случай если точного совпадения не найдется)
-            movies.append(movie_details)
+            movies.append(movie)
 
         if not movies:
             raise MovieNotFoundError("Не удалось получить данные ни по одному фильму.")
 
         # Если точного совпадения не найдено выводим все результаты поиска
-        send_movie_info(bot, message.chat.id, user_id, movies)
+        state = PageState(movies)
+        USER_PAGES.set_state(user_id, state)
+
+        send_movie_info(bot, chat_id, user_id, movies[0], state.current_index, state.total())
 
     except MovieNotFoundError as error:
+        bot.send_message(message.chat.id, error)
+    except ResponseError as error:
+        bot.send_message(message.chat.id, error)
+    except ArgumentError as error:
         bot.send_message(message.chat.id, error)
