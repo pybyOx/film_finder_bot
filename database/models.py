@@ -24,7 +24,7 @@ class FavoriteMovie(BaseModel):
     title = CharField()
     overview = TextField()
     rating = FloatField(null=True)
-    year = IntegerField(null=True)
+    year = CharField(null=True)
     genres = CharField(null=True)
     poster_url = CharField(null=True)
 

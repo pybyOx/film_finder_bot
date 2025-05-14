@@ -9,7 +9,6 @@ else:
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 RAPID_API_KEY = os.getenv("RAPID_API_KEY")
 
-BASE_URL = "https://api.themoviedb.org/3"
 IMG_BASE_URL = "https://image.tmdb.org/t/p/w500"
 
 GENRES_CACHE_FILE = os.path.join(os.path.dirname(__file__), "genres_cache.json")
@@ -24,6 +23,3 @@ DEFAULT_COMMANDS = (("help", "Вывести справку"),
 
 BASE_PARAMS = {"api_key": RAPID_API_KEY,
                "language": "ru-RU"}
-
-MONTHS_RU = {1: "января", 2: "февраля",  4: "апреля", 5: "мая", 6: "июня", 7: "июля", 8: "августа", 9: "сентября",
-             10: "октября", 11: "ноября", 12: "декабря"}
