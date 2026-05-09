@@ -7,6 +7,7 @@ from keyboards.inline.genres_keyboard import get_genre_keyboard
 @bot.message_handler(commands=["genre"])
 @ensure_user_registered
 @send_typing_action
-def genre_handler(message: Message) -> None:
+async def genre_handler(message: Message) -> None:
     """Показывает клавиатуру с жанрами"""
-    bot.send_message(message.chat.id, "Выберите жанр:", reply_markup=get_genre_keyboard())
+    keyboard = await get_genre_keyboard()
+    bot.send_message(message.chat.id, "Выберите жанр:", reply_markup=keyboard)
