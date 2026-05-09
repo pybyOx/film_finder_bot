@@ -1,5 +1,5 @@
 from telebot.types import Message
-from utils.get_cache_file import get_movie_of_day
+from utils.get_cache_file import get_movie_of_day, get_genres
 from loader import bot
 from utils.decorators import ensure_user_registered, send_typing_action
 from models.movie_model import Movie
@@ -11,16 +11,17 @@ from utils.send_movie_info import send_movie_info
 @bot.message_handler(commands=["day"])
 @ensure_user_registered
 @send_typing_action
-def day_handler(message: Message) -> None:
+async def day_handler(message: Message) -> None:
     """Обработчик команды |day"""
 
     user_id = message.from_user.id
     chat_id = message.chat.id
     try:
         # Получаем словарь с данными фильма дня
-        movie = get_movie_of_day()
+        movie = await get_movie_of_day()
+        genres = await get_genres()
 
-        movie = Movie(movie)
+        movie = Movie(movie, genres)
 
         state = PageState([movie])
         USER_PAGES.set_state(user_id, state)

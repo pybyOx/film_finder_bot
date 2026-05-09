@@ -5,6 +5,7 @@ from utils.decorators import ensure_user_registered, send_typing_action
 from api.tmdb_api import make_api_request
 from config_data.config import BASE_PARAMS
 from utils.exceptions import MovieNotFoundError, ResponseError, ArgumentError
+from utils.get_cache_file import get_genres
 import re
 from models.movie_model import Movie
 from states.pagination_state import PageState, USER_PAGES
@@ -14,18 +15,23 @@ from utils.send_movie_info import send_movie_info
 @bot.message_handler(commands=["movie"])
 @ensure_user_registered
 @send_typing_action
-def movie_handler(message: Message) -> None:
+async def movie_handler(message: Message) -> None:
     """Обработчик команды |movie"""
     chat_id = message.chat.id
     user_id = message.from_user.id
 
     try:
         user_title = check_name(message, '/movie Интерстеллар').lower()
+        genres = await get_genres()
 
-        # Получаем словарь с результатами запроса к api
-        response: dict = make_api_request('/search/movie', params={**BASE_PARAMS,
-                                                                   "query": user_title,
-                                                                   "include_adult": False})
+        response: dict = await make_api_request(
+            url_longer='/search/movie',
+            params={
+                **BASE_PARAMS,
+                "query": user_title,
+                "include_adult": False
+            }
+        )
 
         results = response.get("results")
         if not results:
@@ -40,7 +46,7 @@ def movie_handler(message: Message) -> None:
             if not re.search(rf'\b{re.escape(user_title)}\b', movie_title):
                 continue
 
-            movie = Movie(movie)
+            movie = Movie(movie, genres)
 
             # Если найдено точное совпадение по названию
             if movie_title == user_title:

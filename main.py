@@ -7,4 +7,3 @@ if __name__ == "__main__":
     create_models()
     set_default_commands(bot)
     bot.infinity_polling()
-

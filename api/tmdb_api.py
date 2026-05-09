@@ -1,10 +1,9 @@
-import requests
-from api.error_handling import error_handling
+import httpx
 from typing import Dict, Any
 from utils.exceptions import ResponseError
 
 
-def make_api_request(url_longer: str, params: dict) -> Dict[str, Any]:
+async def make_api_request(url_longer: str, params: dict) -> Dict[str, Any]:
     """Отправляет запрос к API и возвращает результат в виде словаря.
     :arg url_longer: Продолжение базового url
     :arg params: Параметры запроса к api
@@ -12,10 +11,14 @@ def make_api_request(url_longer: str, params: dict) -> Dict[str, Any]:
     :raise ResponseError: Ошибка запроса к api
     """
     base_url = "https://api.themoviedb.org/3"
-    response = requests.get(f"{base_url}{url_longer}", params=params)
+    try:
+        async with httpx.AsyncClient() as client:
+            response = await client.get(f"{base_url}{url_longer}", params=params)
+            response.raise_for_status()
+            return response.json()
 
-    # Если возникла ошибка запроса возвращается пустой словарь
-    if not error_handling(response):
-        raise ResponseError("Возникла ошибка запроса к api")
+    except httpx.RequestError as error:
+        raise ResponseError(f"Ошибка сети: {error}")
 
-    return response.json()
+    except httpx.HTTPStatusError as error:
+        raise ResponseError(f"Ошибка HTTP {error.response.status_code}: {error}")

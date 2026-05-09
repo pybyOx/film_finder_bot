@@ -9,7 +9,7 @@ from utils.send_movie_info import send_movie_info
 
 
 @bot.callback_query_handler(func=lambda call: call.data.startswith("genre:"))
-def handle_genre_callback(call: CallbackQuery):
+async def handle_genre_callback(call: CallbackQuery):
     """Обработчик кнопок с названиями жанров"""
     from models.movie_model import Movie
     user_id = call.from_user.id
@@ -17,7 +17,7 @@ def handle_genre_callback(call: CallbackQuery):
     genre_name = call.data.split(":", 1)[1]
 
     try:
-        genres = get_genres()
+        genres = await get_genres()
         genre_id = genres.get(genre_name.lower())
         if not genre_id:
             raise ValueError(f"Жанр '{genre_name}' не найден. Убедитесь, что вы ввели его корректно.")
@@ -30,8 +30,8 @@ def handle_genre_callback(call: CallbackQuery):
                   "with_genres": str(genre_id),
                   "page": 1}
 
-        results = random_movie(params, count=10)
-        movies = [Movie(movie) for movie in results]
+        results = await random_movie(params, count=10)
+        movies = [Movie(movie, genres) for movie in results]
 
         state = PageState(movies)
         USER_PAGES.set_state(user_id, state)
